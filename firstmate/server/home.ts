@@ -40,7 +40,8 @@ import type { BacklogItem, FirstmateConfig, Project, Suggestion } from "../share
 import { parseBacklog } from "./backlog";
 import { renderCharter } from "./charter";
 import { syncCharter } from "./charter-file";
-import { parseSuggestions } from "./suggestions";
+import { FileChangedError, readTextFile, replaceTextIfUnchanged, type WriteHooks } from "./files";
+import { parseSuggestions, withoutSuggestion } from "./suggestions";
 import { TEMPLATES, readTemplate, withoutNotes, type TemplatePath } from "./templates";
 import { seedWatches } from "./watch-files";
 
@@ -123,6 +124,44 @@ export async function readBacklog(home: string): Promise<BacklogItem[]> {
 export async function readSuggestions(home: string): Promise<Suggestion[]> {
   const markdown = await readOptional(join(home, TEMPLATES.suggestions));
   return markdown === null ? [] : parseSuggestions(markdown);
+}
+
+/** How many times a removal starts over when the first mate rewrites the file under it. */
+export const REMOVE_ATTEMPTS = 3;
+
+/**
+ * Takes one suggestion out of `data/suggestions.md`, leaving every other byte as it was, and answers
+ * with the suggestions left. One the file no longer has — the first mate rewrote it since the board
+ * looked — is not an error: nothing is written.
+ *
+ * The write is confined to the home, staged in a temporary file and renamed into place, and refused
+ * if the file no longer reads as it did (`replaceTextIfUnchanged`), checked again just before the
+ * rename. A refusal is the first mate rewriting its list at the same moment, and the removal starts
+ * over from what it wrote. A write of its that lands between that last check and the rename is still
+ * lost; see `stageAndReplace`.
+ */
+export async function removeSuggestion(home: string, target: Suggestion, hooks: WriteHooks = {}): Promise<Suggestion[]> {
+  for (let attempt = 1; ; attempt++) {
+    let file: Awaited<ReturnType<typeof readTextFile>>;
+    try {
+      file = await readTextFile(home, TEMPLATES.suggestions);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+      throw error;
+    }
+    if (file.content === null) throw new Error(`${TEMPLATES.suggestions} is not a text file the board can edit.`);
+    const next = withoutSuggestion(file.content, target);
+    if (next === null) return parseSuggestions(file.content);
+    try {
+      await replaceTextIfUnchanged(home, TEMPLATES.suggestions, file.content, next, hooks);
+      return parseSuggestions(next);
+    } catch (error) {
+      if (!(error instanceof FileChangedError)) throw error;
+      if (attempt >= REMOVE_ATTEMPTS) {
+        throw new Error("The first mate kept rewriting its suggestions while this one was being removed. Try again.");
+      }
+    }
+  }
 }
 
 /**
