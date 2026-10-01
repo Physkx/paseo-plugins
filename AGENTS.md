@@ -50,8 +50,9 @@ paseo plugin logs skills          # load errors and stderr
   `firstmate`.
 - **A failed reload stays failed.** Paseo does not restore the previous code.
 - **Never restart the daemon** — it manages the user's running agents.
-- The daemon needs `"pluginsEnabled": true` in its `config.json`, and **Paseo 0.9.0 or newer**. All
-  six plugins declare `requirements.paseo: ">=0.9.0"`; on an older daemon they do not degrade,
+- The daemon needs `"pluginsEnabled": true` in its `config.json`, and **Paseo 0.9.0 or newer**. Four
+  plugins declare `requirements.paseo: ">=0.9.0"`, and `github-board` and `firstmate`
+  `">=0.11.0-beta.2"`, for 0.11's screen and sidebar API; on an older daemon they do not degrade,
   they refuse to load. There are no version fallbacks left in this repo — see *Versions* below for
   why the app-side check made them unnecessary.
 - There is no harness for plugin UI. A clean typecheck and a clean reload prove a `client/` change
@@ -236,8 +237,8 @@ server-side `read()` arrived with the 0.9 SDK, after that split was made; nothin
 
 `paseo-plugin.json` carries `requirements.paseo`, an npm semver range. **A missing
 `requirements.paseo` means `<0.8.0`**, so 0.8 rejects the plugin outright with a link to the
-migration guide — adding the field is part of migrating, not a substitute for it. All six plugins
-here declare `>=0.9.0`.
+migration guide — adding the field is part of migrating, not a substitute for it. Four plugins
+here declare `>=0.9.0`; `github-board` and `firstmate` declare `>=0.11.0-beta.2`.
 
 **The manifest may only carry what the *oldest* declared version accepts.** `PluginManifestSchema`
 is `.strict()` in every Paseo, so a key one version added is a load failure on every version before
@@ -324,7 +325,8 @@ cost per plugin, not per release.
 ### The SDK dependency
 
 All six plugins now depend on the real published `@getpaseo/plugin`, pinned to an exact
-version — `0.9.0` at the time of writing. Pin it *exactly*: `npm install --save-dev` writes
+version — `0.9.0` at the time of writing, except `github-board` and `firstmate`, on `0.11.0-beta.2`
+for the 0.11 screen and sidebar API. Pin it *exactly*: `npm install --save-dev` writes
 a caret, and a range here is the same bet on an unreleased shape that the prerelease trap below
 describes. `skills` used to ship a hand-written
 `paseo-plugin.d.ts` shim instead; it was deleted in the 0.8 migration, because every new host API
@@ -535,7 +537,7 @@ passes the enabled ids into the RPC rather than the daemon keeping a copy.
 ## firstmate
 
 Talk to one "first mate" agent and it runs a crew of worker agents, each in its own Paseo worktree; a
-sidebar surface puts the conversation beside a board of the crew. A Paseo-native port of the
+screen puts the conversation beside a board of the crew. A Paseo-native port of the
 [firstmate](https://github.com/kunchenguid/firstmate) agent distro, replacing
 ABorakati's `paseo-firstmate`, which was a dashboard over that distro's bash scripts and tmux sessions.
 Three things shape it, all in `firstmate/AGENTS.md`: **the plugin never dispatches a crewmate** — the

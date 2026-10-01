@@ -44,7 +44,8 @@ import {
   watchStatusText,
   watchTone,
 } from "./format";
-import { watchPath, type WatchSummary } from "../shared/fleet";
+import { watchPath, type AgentSummary, type FleetCard, type WatchSummary } from "../shared/fleet";
+import { activeCrewCount } from "./screen";
 import { injectedSummary, transcriptRows, type TimelineEntry } from "./transcript-rows";
 
 function entry(item: unknown, seq: number): TimelineEntry {
@@ -924,5 +925,56 @@ describe("suggestionRemovals", () => {
     expect(suggestionRemovals.pending(pair)).toBe(false);
     expect(seen).toHaveLength(1);
     unsubscribeNext();
+  });
+});
+
+function crewCard(key: string, agent: Partial<AgentSummary> | null, column: FleetCard["column"] = "working"): FleetCard {
+  return {
+    key,
+    column,
+    taskId: null,
+    title: `Task ${key}`,
+    project: null,
+    kind: null,
+    backlog: null,
+    agent:
+      agent === null
+        ? null
+        : {
+            id: key,
+            workspaceId: null,
+            title: null,
+            provider: "claude",
+            model: null,
+            status: "running",
+            cwd: "/tmp",
+            pendingPermissions: 0,
+            requiresAttention: false,
+            lastError: null,
+            updatedAt: "2026-10-01T10:00:00.000Z",
+            labels: {},
+            ...agent,
+          },
+    report: null,
+    url: null,
+  };
+}
+
+describe("the sidebar row's badge", () => {
+  it("counts the live crewmates in the Working and Idle columns, and nothing else", () => {
+    expect(activeCrewCount([])).toBe(0);
+    const cards = [
+      crewCard("working", { status: "running" }, "working"),
+      crewCard("idle", { status: "idle" }, "idle"),
+      crewCard("reported-done", { status: "idle" }, "idle"),
+      crewCard("blocked", { status: "idle", pendingPermissions: 1 }, "blocked"),
+      crewCard("failed", { status: "error" }, "failed"),
+      crewCard("parked", { status: "idle" }, "parked"),
+      crewCard("landed", { status: "idle" }, "done"),
+      crewCard("queued", null, "queued"),
+      crewCard("backlog-only", null, "working"),
+      crewCard("closed", { status: "closed" }, "idle"),
+    ];
+    expect(activeCrewCount(cards)).toBe(3);
   });
 });

@@ -16,7 +16,7 @@
  * fleet, the compact tab and the crewmate being watched live in module scope
  * and the board comes back drawn rather than empty.
  */
-import type { PluginSurfaceProps } from "@getpaseo/plugin/client";
+import type { PluginScreenProps } from "@getpaseo/plugin/client";
 import { useRpc, useSettings } from "@getpaseo/plugin/client";
 import { Icon, useToast } from "@getpaseo/plugin/client/react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -70,7 +70,10 @@ export function bindSettingsOpener(opener: ((id: string) => void) | null): void 
 const DEFAULT_DISPLAY: DisplaySettings = displaySettings.schema.parse({});
 const SAVE_DELAY_MS = 400;
 
-/** The fleet query, shared by the surface and the workspace panels so they poll once between them. */
+/**
+ * The fleet query, shared by the screen, the workspace panels and the sidebar item so they poll once
+ * between them.
+ */
 export function useFleet(pollSeconds: number) {
   const load = useRpc(loadFleet);
   return useQuery({
@@ -86,7 +89,7 @@ export function useFleet(pollSeconds: number) {
   });
 }
 
-export function FleetSurface({ theme, layout, navigation }: PluginSurfaceProps) {
+export function FleetSurface({ theme, layout, navigation }: PluginScreenProps) {
   const compact = layout.compact;
   const enable = useRpc(enableAgentTools);
   const compareCharters = useRpc(compareCharter);

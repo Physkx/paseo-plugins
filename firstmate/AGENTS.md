@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A Paseo plugin that adds a **FirstMate** sidebar surface: a conversation with one "first mate" agent
+A Paseo plugin that adds a **FirstMate** screen: a conversation with one "first mate" agent
 beside a board of the "crew" of agents it runs, each in its own git worktree. A Paseo-native port of
 [kunchenguid/firstmate](https://github.com/kunchenguid/firstmate) — the agent distro — by way of
 [ABorakati/paseo-firstmate](https://github.com/ABorakati/paseo-firstmate), which was a dashboard over
@@ -15,7 +15,7 @@ compile time. This file covers only what is specific to `firstmate`.
 | File                          | What it owns                                                                              |
 | ----------------------------- | ----------------------------------------------------------------------------------------- |
 | `index.server.ts`             | Wiring — the RPCs, the display settings document, the steer relay hook.                    |
-| `index.client.tsx`            | Wiring — the surface, sidebar item, two panels, settings screen, ⌘K items, `/fm` `/bearings` `/ahoy`. |
+| `index.client.tsx`            | Wiring — the screen, sidebar item, two panels, settings screen, ⌘K items, `/fm` `/bearings` `/ahoy`. |
 | `shared/fleet.ts`             | Every RPC contract, the card/fleet shapes, the daemon config shape, and `CREW_LABELS`.     |
 | `shared/settings.ts`          | The host settings document: column order and folds, the chat's width, the poll interval.   |
 | `templates/`                  | **Every file the plugin writes into the home**, as Markdown laid out as it lands there, and the parts that go inside them. The first mate's behaviour is `templates/data/charter.md`. |
@@ -45,7 +45,9 @@ compile time. This file covers only what is specific to `firstmate`.
 | `server/data-dir.ts`          | `$PASEO_HOME/plugin-data/firstmate/`, and moving the plugin's files out of `plugins/`.     |
 | `server/serialize.ts`         | Runs the config update and each home file's save one at a time, per file.                  |
 | `server/host-types.ts`        | Paseo types projected out of `@getpaseo/plugin`; see the root AGENTS.md.                    |
-| `client/fleet.tsx`            | The surface: header, banners, chat/board split, compact tabs, the shared fleet query.      |
+| `client/fleet.tsx`            | The screen: header, banners, chat/board split, compact tabs, the shared fleet query.       |
+| `client/screen.ts`            | The screen's id, and the count of working and idle crewmates on its sidebar row. Pure.     |
+| `client/sidebar.tsx`          | The sidebar item: the FirstMate row and its badge.                                         |
 | `client/chat.tsx`             | The first mate's conversation, folded to the words, and the composer.                      |
 | `client/draft.ts`, `attachments.ts` | The unsent message and what is attached to it, kept on `globalThis` across reloads.  |
 | `shared/files.ts`, `server/files.ts` | The home as files: list, read, write — confined to the home, saved against the version opened. |
@@ -120,9 +122,8 @@ by anyone; the heartbeat is what catches it.
 
 `PaseoAgentHandle.send` **interrupts a running turn by default.** For the first mate that is wrong — it
 may be halfway through a dispatch — so `server/send.ts` sets `activeTurnBehavior: "steer"`, which the
-SDK's options type does not declare but the handle passes through to the daemon (read in the 0.9.0 and
-0.9.1 client). Everything the plugin sends goes through it. If a later SDK drops the field, the message
-still arrives, as an interruption.
+SDK declares since 0.11 (`PaseoAgentSendOptions` is the daemon client's `SendMessageOptions`); 0.9's
+handle passed it through undeclared. Everything the plugin sends goes through it.
 
 "Steer" is only as gentle as the provider. The message joins the running turn where the provider
 can take one mid-turn; where it cannot, the daemon's `steerOrReplaceActiveTurn` **cancels** the turn
@@ -477,6 +478,28 @@ only when the chat is out of sight — folded, or behind the Crew tab — with a
 Checked on a throwaway 0.9.1 daemon: a Claude agent's AskUserQuestion arrived in the timeline page's
 snapshot with `allowOther` set, and answering it with `buildAnswers` got "I picked Blue." back.
 
+## The screen and its sidebar row
+
+Paseo 0.11 replaced the static sidebar row and the bare surface with `addScreen` and
+`addSidebarHeaderItem`, and both keep the old id, `fleet` (`FLEET_SCREEN_ID`): the sidebar item's id is
+the key Settings › Sidebar keeps its order and hidden state under, and a saved
+`/plugin/firstmate/sidebar/fleet` link resolves to a screen of that id. The screen is titled
+"FirstMate" — the old surface's header read "fleet" — and every way in — the sidebar, "Open FirstMate",
+"FirstMate: bearings", `/bearings`, `/ahoy` — is `openScreen`. Two things Paseo draws differently for a
+non-legacy item, and nothing here can change: the screen header has no ship, and Settings › Sidebar
+shows a generic plugin icon.
+
+The item (`client/sidebar.tsx`) is the one FirstMate row, with a badge in `trailing`: how many crewmates
+Paseo still runs have their card in the Working or the Idle column (`activeCrewCount`), and no badge at
+zero. It reads **the board's own fleet query** (`useFleet`) rather than an agent observation of its own:
+the screen, the panels and the item share one cache and one poll, and the count agrees with the
+board's columns. The cost is that the poll now runs whenever the app shows this host — before, only
+while the screen or a panel was open.
+
+A row per crewmate was tried and dropped after the captain used it: a backlog title is a sentence with
+notes, and Paseo's row draws its label with no line limit, so the rows were paragraphs; one count says
+what the sidebar needs to.
+
 ## Watching a crewmate
 
 A card's **Watch** shows that crewmate in the board's place — the right-hand pane, or the Crew tab on a
@@ -728,4 +751,5 @@ the user's):
    a scratch `local-only` repository in `data/projects.md`, ask for a one-line change, and watch a
    crewmate appear on the board in its own worktree, report `done: ready in branch fm/<id>`, and the
    first mate relay it.
-4. Then look at the surface, wide and compact, in two themes — there is no harness for plugin UI.
+4. Then look at the screen and the sidebar row's badge, wide and compact, in two themes — there is no
+   harness for plugin UI.

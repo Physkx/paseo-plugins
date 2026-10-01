@@ -7,6 +7,24 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Every version
 as `@gpambrozio/paseo-firstmate` and tagged here, so a version is something to install and a line to
 read before you move.
 
+## [0.3.0] — 2026-10-01
+
+**Requires Paseo 0.11.** This version does not load on Paseo 0.10 or older; stay on 0.2.1 until you
+update Paseo.
+
+### Added
+
+- **The FirstMate row in the sidebar counts your crew.** A small number beside it says how many workers
+  are working or idle right now, and it goes away when there are none.
+
+### Changed
+
+- **The FirstMate page is titled "FirstMate".** Opened from the Command Center, `/bearings` or `/ahoy`,
+  its title read "fleet"; only the sidebar row said FirstMate. Your sidebar order, a hidden FirstMate
+  row and saved links to it all carry over.
+- Settings › Sidebar now shows a generic plugin icon for FirstMate instead of the ship, and the page's
+  title no longer has the ship beside it. Paseo draws both that way for every plugin on its new sidebar.
+
 ## [0.2.1] — 2026-09-26
 
 ### Removed
