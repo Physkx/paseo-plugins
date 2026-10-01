@@ -24,9 +24,9 @@ leaving Paseo and finding the file by hand.
 ## Non-goals
 
 - Editing, creating, installing, or deleting skills.
-- Scanning skill files for providers other than Claude and Codex. Nobody has documented where
-  Copilot, OpenCode, or Pi keep theirs. Those agents still get a panel, listing what their session
-  reports.
+- Scanning skill files for providers other than Claude, Codex, and Hermes. Nobody has documented
+  where Copilot, OpenCode, or Pi keep theirs. Those agents still get a panel, listing what their
+  session reports.
 - Displaying shadowed duplicate copies of a name. Collisions resolve first-wins, silently.
 - Verifying against the live session what it actually loaded. See "Future seams".
 - Any change to the Paseo repository beyond `agent.commands()`, which the panel cannot work around.
@@ -69,6 +69,30 @@ the cheapest way to close this and is not done yet.
 skills share the same `name`, Codex doesn't merge them; both can appear in skill selectors." This
 panel resolves collisions first-wins and shows one row. Across five scopes that silently drops
 real rows — see "Future seams".
+
+**Hermes scopes beyond the home are not read.** Hermes loads project skills from
+`<root>/.hermes/skills` and `<root>/.agents/skills` — but only when the repository root is on the
+session's trusted-project list, so which of them apply is not decidable from the filesystem
+alone. It also loads extra directories configured through `skills.external_dirs`, which the
+plugin does not parse. Both stay unread: the panel shows the profile home's skills, which is
+what a Paseo-launched, unprofiled `hermes acp` loads by default.
+
+**A Hermes agent running with `--profile` gets its profile's skills usable but not listed.**
+`defaultSkillRoots` reads the plugin subprocess's own `process.env` — what the daemon passed it,
+not a provider's `env` — so the resolver reads the unprofiled `~/.hermes` home, and
+`HERMES_HOME` on a Hermes provider entry changes nothing. Only a daemon started with
+`HERMES_HOME` in its environment moves the scan root, and that moves it for every Hermes agent
+on the host. Resolving the effective home per agent would mean reading the provider
+configuration and per-agent launch environment through the daemon API, which is the seam a
+future version plugs.
+
+**Hermes's `_org` mirrors and deeper nesting are not read.** `_org` mirrors are skipped by
+name at both levels — the same intentional omission the Hermes section describes, since reading
+the `.active_org` marker and mirror layout is out of scope. Hermes also walks its skills tree
+without a depth limit, while the plugin reads two levels, so a skill nested below a
+category-in-a-category is invisible here. The two-level bound keeps the scan cheap on a home
+that can hold caches and plugin checkouts, and no bundled skill sits deeper than two; the cost
+is the nesting above, which no bundled install uses anyway.
 
 ## Constraints that shaped this
 
@@ -284,6 +308,38 @@ collapses same-named entries, so nothing doubles — verified against the real d
 hold byte-identical copies of the same seven skills. And the sync only mirrors the skills Paseo
 ships; anything else in `~/.agents/skills` is mirrored nowhere and was invisible.
 
+### Hermes
+
+`$HERMES_HOME/skills` or `~/.hermes/skills`, scope `personal`. The resolver reads that one
+directory; the scopes Hermes layers on top of it are out of scope for v1 and listed under
+Limitations below.
+
+The layout itself is the difference: a Hermes skills directory holds flat skills *and* category
+folders, side by side. `skills/<skill>/SKILL.md` and `skills/<category>/<skill>/SKILL.md` are both
+real — the bundled install ships every skill inside a category (`productivity/docx`,
+`research/arxiv`), and flat entries come from user and cross-agent installs, whose skill folders
+may be symlinks into `~/.agents`. The scan reads both levels: every direct child that is a skill,
+and one level down inside every child that is not. A child with no `SKILL.md` is a category; the
+test is file existence, not a parse, because a `SKILL.md` that fails frontmatter still marks its
+folder as a skill rather than a container.
+
+Hermes prunes `.git`, `.hub`, `.archive`, `.curator_backups`, and other environment directories
+from its own walk wherever they appear (`EXCLUDED_SKILL_DIRS` in its `agent/skill_utils.py`), so
+the scan excludes the same names — without that, retired skills in `.archive` would list as
+live ones. It skips `_org` too: Hermes walks `_org/<org>/` as token-gated organization mirrors
+that load only for the org named by the `skills/_org/.active_org` marker, which its
+`read_active_org_id()` reads back. Reading that marker and the mirror layout is deliberately
+out of scope here — an intentional omission rather than an impossibility — so the scan lists no
+org skills rather than half-supporting them.
+
+The profile caveat: a Hermes agent launched with `--profile <name>` reads
+`~/.hermes/profiles/<name>/skills`, and nothing the plugin can see says which profile an agent
+uses. `defaultSkillRoots` reads the plugin subprocess's `process.env` — the environment the
+daemon passed it, not any provider's `env` — so `HERMES_HOME` moves the scan root only when the
+daemon itself was started with it, which applies to every Hermes agent on that host alike. The
+resolver reads the unprofiled home, which is what a Paseo-launched `hermes acp` runs with;
+agents that run with a profile get their profile's skills usable but not listed.
+
 ### Providers with no scannable path
 
 Return `scanned: false` with an empty discovery list. `scanned` names filesystem discovery, not the
@@ -375,6 +431,12 @@ fixtures in the plugin project:
 - outside a repository the walk does not climb past `cwd`
 - a directory named by two scopes at once (a repo rooted at `$HOME`) is read once
 - first-wins on a name collision across directories
+- Hermes: flat skills and category skills side by side; an excluded name stays hidden at both
+  levels — posing as a flat skill, inside a category, and as an archived skill in `.archive` —
+  and cannot take a live skill's name through first-wins; `_org` mirrors stay hidden; a
+  symlinked skill and a symlinked category both resolve; a `SKILL.md` that fails frontmatter
+  still marks its folder as a skill rather than a category; and a category holds no skill below
+  the second level
 - entries missing `name` or `description` are skipped
 - absent directories do not fail the scan
 - stale plugin-cache versions are excluded by the manifest

@@ -366,3 +366,29 @@ popover closes over a composer that is already that agent's. The panel stays rea
 **Open tab** button in the popover's header and from the Command Center. Cost if wrong: the full
 `SKILL.md` body renders inside a 440-point-tall popover, and a skill list long enough to need the
 search is scrolled there rather than in a whole tab.
+
+Ruling 53 (2026-10-01, Hermes resolver): the Hermes scan EXCLUDES the directories Hermes itself
+prunes and reads only two levels. Hermes walks its skills tree with no depth bound but prunes
+`EXCLUDED_SKILL_DIRS` (`.archive`, `.hub`, `.curator_backups`, and environment folders) wherever
+they appear and gates `_org/<org>/` mirrors on a token marker; a plugin scan that ignored those
+would list retired skills as live ones and org mirrors the agent cannot load. The resolver
+therefore filters the same names, skips `_org` outright, and stops at two levels — flat skills
+and one category level — instead of mirroring the unbounded walk, because nothing bundled sits
+deeper than two and a bounded scan cannot wander into caches or plugin checkouts. The gaps left
+behind (deeper nesting, project scopes under trusted-project roots, `skills.external_dirs`) are
+recorded in design.md's Limitations. Cost if wrong: a skill a user nested below a
+category-in-a-category, or one installed through a config path the resolver does not read, is
+invisible in the panel while remaining usable by the agent.
+
+Ruling 54 (2026-10-01, upstream review of the Hermes resolver): the exclusion predicate must
+gate the READS, not only the category detection. The first version filtered `EXCLUDED_DIRS`
+while classifying the skills directory's children, then handed the flat directory and each
+category to `readSkillsFromDirectory`, which enumerated every child unfiltered — so
+`skills/.archive/SKILL.md` listed as a flat skill and could shadow a live skill through
+first-wins, and `productivity/node_modules/SKILL.md` listed inside a category. The fix threads
+an optional `includeEntry(name)` predicate through `SkillDirectoryCandidate` and
+`readSkillsFromDirectory`, and the Hermes resolver attaches it to every candidate it builds;
+Claude and Codex pass no predicate and read exactly what they did before. Regression fixtures
+cover both levels: an excluded name posing as a flat skill, an excluded name inside a category,
+and an excluded flat entry no longer shadowing a live one. Cost if wrong (before the fix): the
+panel listed skills the agent cannot load and could hide a live skill behind one.
