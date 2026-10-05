@@ -189,6 +189,8 @@ describe("commandText", () => {
     expect(await commandText("bearings", " file include PRs ")).toBe("Bearings, please — file include PRs.");
     expect(await commandText("ahoy", "  ")).toBe("Ahoy!");
     expect(await commandText("ahoy", "and the deploy?")).toBe("Ahoy! and the deploy?");
+    expect(await commandText("afk", "")).toBe("Going AFK.");
+    expect(await commandText("afk", " until 7am, finish the renewals work ")).toBe("Going AFK: until 7am, finish the renewals work");
   });
 });
 

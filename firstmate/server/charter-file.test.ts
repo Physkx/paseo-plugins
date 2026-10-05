@@ -140,8 +140,9 @@ describe("prepareHome and the charter", () => {
     expect(agents).not.toContain("firstmate-charter");
     expect(fingerprint(await read(home, CHARTER_FILE))).toBe(fingerprint(await readTemplate(TEMPLATES.charter)));
     // Pinned so a charter change is deliberate: every untouched home follows it, and every edited one is
-    // offered it as charter.new.md. e0b749cb695c5df6 was the charter as it moved into templates/.
-    expect(fingerprint(await readTemplate(TEMPLATES.charter))).toBe("8b6df21d082df6e6");
+    // offered it as charter.new.md. e0b749cb695c5df6 was the charter as it moved into templates/;
+    // c0f36de62a658db0 is the Physkx fork's charter (routing-prompt deferral, seats, local-only landing, away mode).
+    expect(fingerprint(await readTemplate(TEMPLATES.charter))).toBe("c0f36de62a658db0");
 
     await editCopy(home, "# My first mate\n\n<!-- a note to myself -->\nYour home is {{home}}; keep it tidy.");
     await prepareHome(home, FirstmateConfigSchema.parse({}));

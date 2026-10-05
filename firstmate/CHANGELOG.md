@@ -7,6 +7,26 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Every version
 as `@gpambrozio/paseo-firstmate` and tagged here, so a version is something to install and a line to
 read before you move.
 
+## [0.3.1-physkx.1] - 2026-10-06
+
+Physkx fork, installed from source by personal-apm; not published to npm.
+
+### Changed
+
+- The charter defers to the daemon's managed routing prompt (Paseo `appendSystemPrompt`) for seats,
+  review gates, host routing, reporting and style, except its hard rules and record formats.
+- Crewmates launch from the routing prompt's seat profiles (`list_profiles`) when the crew model is
+  left to the first mate.
+- Unregistered projects default to `local-only +yolo`; local-only landings push `fm/<id>` to the default
+  branch from the crewmate's worktree after native checks and required reviews pass. Briefs never rebase.
+- Briefs carry an Assignment line (seat, tier, G, R, evidence paths) and quote the captain's words.
+- Plain, literal tone: no "captain" address or nautical phrasing in chat.
+
+### Added
+
+- Away mode: an **AFK** button and `/afk [until <time>] [notes]` send "Going AFK"; charter section 11
+  defines the posture and the return summary.
+
 ## [0.3.1] — 2026-10-04
 
 ### Added

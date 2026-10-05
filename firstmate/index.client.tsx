@@ -106,6 +106,16 @@ export default function contribute(client: PluginClientContext) {
     },
   });
   client.addSlashCommand({
+    name: "afk",
+    description: "FirstMate: I am away; carry on and summarise when I return",
+    argumentHint: "[until <time>] [notes]",
+    context: "workspace",
+    onSubmit({ args, rpc, openScreen }) {
+      openScreen({ screenId: FLEET_SCREEN_ID });
+      return askFirstMate(rpc, "afk", args);
+    },
+  });
+  client.addSlashCommand({
     name: "ahoy",
     description: "FirstMate: what happened, and what needs your call",
     argumentHint: "",

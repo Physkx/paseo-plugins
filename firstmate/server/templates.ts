@@ -39,6 +39,8 @@ export const TEMPLATES = {
   crewModeOpen: "parts/crew-mode-open.md",
   crewProviderChosen: "parts/crew-provider-chosen.md",
   crewProviderOpen: "parts/crew-provider-open.md",
+  afk: "messages/afk.md",
+  afkArgs: "messages/afk-args.md",
   ahoy: "messages/ahoy.md",
   ahoyArgs: "messages/ahoy-args.md",
   bearings: "messages/bearings.md",

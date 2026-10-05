@@ -2,6 +2,10 @@
 
 A [Paseo](https://paseo.sh) plugin: talk to one agent, ship with a crew.
 
+> **Physkx fork.** This copy's charter defers to the daemon's managed routing prompt, launches crew from
+> seat profiles, lands `local-only` work by fast-forward push, writes plainly, and adds away mode (AFK).
+> See `CHANGELOG.md` `0.3.1-physkx.1`. Installed from source by personal-apm.
+
 You talk to a single agent — the **first mate** — and it runs the crew for you. Every task goes to a
 **worker**: its own Paseo agent, in its own git worktree, so parallel work on one repository never
 collides. The first mate writes each worker's instructions, supervises it to the end, and brings you

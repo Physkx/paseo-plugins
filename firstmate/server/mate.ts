@@ -213,6 +213,7 @@ export async function compactMate(paseo: PaseoApi): Promise<string> {
 const COMMANDS = {
   bearings: [TEMPLATES.bearings, TEMPLATES.bearingsArgs],
   ahoy: [TEMPLATES.ahoy, TEMPLATES.ahoyArgs],
+  afk: [TEMPLATES.afk, TEMPLATES.afkArgs],
 } as const;
 
 /**

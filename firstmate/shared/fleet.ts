@@ -402,7 +402,7 @@ export const askMate = defineRpc({
 });
 
 /** The requests the plugin words for the captain; the server fills each from its template. */
-export const MateCommandSchema = z.enum(["bearings", "ahoy"]);
+export const MateCommandSchema = z.enum(["bearings", "ahoy", "afk"]);
 export type MateCommand = z.infer<typeof MateCommandSchema>;
 
 /**

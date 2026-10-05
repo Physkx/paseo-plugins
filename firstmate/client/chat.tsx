@@ -434,6 +434,14 @@ export function MateChat({
               disabled={sending}
               onPress={() => sendCommand("ahoy")}
             />
+            <IconButton
+              icon="Moon"
+              label="AFK"
+              showLabel
+              theme={theme}
+              disabled={sending}
+              onPress={() => sendCommand("afk")}
+            />
             <MateControls
               theme={theme}
               compact={compact}
