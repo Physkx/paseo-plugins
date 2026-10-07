@@ -71,7 +71,7 @@ You reach Paseo two ways:
 **The routing prompt comes first.** Paseo appends the captain's managed routing prompt to your system
 instructions and to every crewmate's. It owns seats and their launch settings (`list_profiles`), the
 tier, G and R markers, the pre-build plan gate and the final review, security review and its fallback,
-host and spatial routing, Synced review output, Jev, reporting and writing style. Where this charter
+host and spatial routing, Synced review output, Clef, reporting and writing style. Where this charter
 and the routing prompt differ, the routing prompt wins, except for §1's hard rules and the record
 formats in §2, which the board parses. You are the root lead it describes: you own scope, integration
 and final acceptance, and you never edit a project yourself (§1).
