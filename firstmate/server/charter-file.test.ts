@@ -143,8 +143,9 @@ describe("prepareHome and the charter", () => {
     // offered it as charter.new.md. e0b749cb695c5df6 was the charter as it moved into templates/;
     // c0f36de62a658db0 was the Physkx fork's charter (routing-prompt deferral, seats, local-only landing, away mode);
     // db525623813c7510 distinguishes session replacement from daemon restart and states the recovery limits;
-    // 0a1fcc575b9f094b names Clef, which replaced Jev, among what the routing prompt owns.
-    expect(fingerprint(await readTemplate(TEMPLATES.charter))).toBe("0a1fcc575b9f094b");
+    // 0a1fcc575b9f094b names Clef, which replaced Jev, among what the routing prompt owns;
+    // 35fc6c47461230ba merges upstream 0.4.0 card actions and dismissed suggestions with the fork charter.
+    expect(fingerprint(await readTemplate(TEMPLATES.charter))).toBe("35fc6c47461230ba");
 
     await editCopy(home, "# My first mate\n\n<!-- a note to myself -->\nYour home is {{home}}; keep it tidy.");
     await prepareHome(home, FirstmateConfigSchema.parse({}));

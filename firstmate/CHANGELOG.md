@@ -7,6 +7,67 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Every version
 as `@gpambrozio/paseo-firstmate` and tagged here, so a version is something to install and a line to
 read before you move.
 
+## [0.4.0-physkx.1] - 2026-10-11
+
+Physkx fork, installed from source by personal-apm; not published to npm.
+
+### Changed
+
+- Merge upstream 0.4.0, including held-card action buttons and Answer boxes, persistent dismissed
+  suggestions, larger text, and the released Paseo 0.11.0 SDK floor.
+- Preserve managed routing, seat profiles, local-only landing, AFK authority, session replacement
+  and daemon restart distinctions, and Clef ownership.
+
+## [0.4.0] — 2026-10-08
+
+### Added
+
+- **Answer a waiting card from the board.** A card waiting on your call now shows the first mate's
+  likely answers as buttons right under "Captain's call" — "Merge", "Hold", "Postgres", "SQLite" —
+  and pressing one sends that answer to the first mate at once, just like a suggestion. Every waiting
+  card also has an Answer box for anything else: what you type goes to the first mate with the task's
+  name in front, so it knows which decision you are answering. On a phone, as with a suggestion, the
+  chat comes into view to show it go out.
+
+  The first mate writes those answers itself, so it needs its new instructions: a home whose charter
+  you have not edited picks them up on its own; if you have edited yours, the board offers the new one
+  to compare. A running first mate follows them once it re-reads its instructions or is restarted.
+
+## [0.3.4] — 2026-10-07
+
+### Fixed
+
+- **A suggestion you remove stays removed.** Taking a suggestion off the board with its trash button
+  used to last only until the first mate next updated its list, and then it came back. FirstMate now
+  remembers what you removed: the board keeps it hidden, and the first mate is told not to suggest it
+  again. If something about it really changes — a new pull request, new work, a new decision — the
+  first mate can suggest it again in words that say what changed, and that one shows. Pressing a
+  suggestion to send it does not count as removing it.
+
+  What you removed is listed in `data/suggestions-dismissed.md` in the first mate's home, the newest
+  50; open it in Files and delete a line to let that suggestion show again. A home whose charter you
+  have not edited picks up the first mate's new instructions on its own; if you have edited yours, the
+  board offers the new one to compare. A running first mate follows them once it re-reads its
+  instructions or is restarted.
+
+## [0.3.3] — 2026-10-07
+
+### Changed
+
+- **Larger, easier-to-read text.** Everything in FirstMate is a size up and now matches Paseo's own
+  default text sizes: the chat, the cards, the suggestions, the watches and the files read at the
+  size Paseo's own screens do, titles stay above body text and the small print stays below it.
+  FirstMate does not yet follow the font sizes you choose in Paseo's Settings, because Paseo does not
+  share them with plugins; it will as soon as it does.
+
+## [0.3.2] — 2026-10-07
+
+### Changed
+
+- **Requires the released Paseo 0.11.0.** FirstMate was built against a Paseo 0.11 preview; it now
+  follows the final release, and no longer loads on the 0.11 previews. Nothing changes in FirstMate
+  itself.
+
 ## [0.3.1-physkx.1] - 2026-10-06
 
 Physkx fork, installed from source by personal-apm; not published to npm.

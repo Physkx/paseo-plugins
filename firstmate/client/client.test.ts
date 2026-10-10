@@ -19,6 +19,7 @@ import {
   restoreFailed,
   toAttachment,
 } from "./attachments";
+import { answerKey, answerText, cardActions, isHeld, submitAnswer, type MateAsk } from "./card-answer";
 import { createDraftStore } from "./draft";
 import { fileCandidates, inlineTokens, lookupIn, pathCandidate, recentCandidates } from "./file-links";
 import { MAX_FILE_PATH_LENGTH, findHomeFiles } from "../shared/files";
@@ -45,7 +46,7 @@ import {
   watchStatusText,
   watchTone,
 } from "./format";
-import { watchPath, type AgentSummary, type FleetCard, type WatchSummary } from "../shared/fleet";
+import { watchPath, type AgentSummary, type BacklogItem, type FleetCard, type WatchSummary } from "../shared/fleet";
 import { activeCrewCount } from "./screen";
 import { injectedSummary, transcriptRows, type TimelineEntry } from "./transcript-rows";
 
@@ -1006,5 +1007,129 @@ describe("the sidebar row's badge", () => {
       crewCard("closed", { status: "closed" }, "idle"),
     ];
     expect(activeCrewCount(cards)).toBe(3);
+  });
+});
+
+describe("a card's actions and answer", () => {
+  function backlogCard(item: Partial<BacklogItem>): FleetCard {
+    const backlog: BacklogItem = {
+      section: "queued",
+      id: "pick-db",
+      title: "Choose the database",
+      project: "web",
+      kind: "captain",
+      mode: null,
+      agentId: null,
+      hold: null,
+      actions: [],
+      blockedBy: null,
+      since: null,
+      url: null,
+      reportPath: null,
+      outcome: null,
+      ...item,
+    };
+    return { ...crewCard(`backlog:${backlog.id}`, null, "blocked"), taskId: backlog.id, title: backlog.title, backlog };
+  }
+  const choices = [
+    { label: "Postgres", prompt: "Use Postgres for the web project's database (pick-db)" },
+    { label: "SQLite", prompt: "Use SQLite for the web project's database (pick-db)" },
+  ];
+
+  it("draws the first mate's actions in order, held or not", () => {
+    const held = backlogCard({ hold: "Postgres or SQLite?", actions: choices });
+    expect(isHeld(held)).toBe(true);
+    expect(cardActions(held)).toEqual(choices);
+
+    const free = backlogCard({ kind: null, actions: [choices[0]!] });
+    expect(isHeld(free)).toBe(false);
+    expect(cardActions(free)).toEqual([choices[0]]);
+
+    expect(cardActions(crewCard("crew-only", { status: "idle" }))).toEqual([]);
+    expect(isHeld(crewCard("crew-only", { status: "idle" }))).toBe(false);
+  });
+
+  it("sends an answer under the task's id and title, the way bb's board does", () => {
+    const held = backlogCard({ hold: "Postgres or SQLite?" });
+    expect(answerText(held, "  Postgres, but keep SQLite for tests\n")).toBe(
+      "pick-db — Choose the database: Postgres, but keep SQLite for tests",
+    );
+    expect(answerText(held, "   ")).toBeNull();
+    expect(answerText(crewCard("crew-only", { status: "idle" }), "anything")).toBeNull();
+  });
+
+  /**
+   * The board's sender as `fleet.tsx` builds it: the chat's one-at-a-time gate, and — like a phone — the
+   * board swapped for the chat as soon as a send is taken, which unmounts the card.
+   */
+  function boardSender() {
+    const gate = createSendGate();
+    const sent: string[] = [];
+    let settle: (ok: boolean) => void = () => {};
+    let tab = "board";
+    const toMate: MateAsk = {
+      get sending() {
+        return gate.busy();
+      },
+      send(text, onFailure, onSent) {
+        const started = gate.run(function () {
+          sent.push(text);
+          return new Promise<void>((resolve, reject) => {
+            settle = (ok) => (ok ? resolve() : reject(new Error("daemon away")));
+          });
+        });
+        if (started === null) return false;
+        started.then(
+          () => onSent?.(),
+          () => onFailure?.(),
+        );
+        tab = "chat";
+        return true;
+      },
+    };
+    return { toMate, sent, settle: (ok: boolean) => settle(ok), tab: () => tab, back: () => (tab = "board") };
+  }
+
+  it("keeps the answer, disabled, while it goes out and away; back on the board it is open and empty, sent once", async () => {
+    const store = createDraftStore({});
+    const held = backlogCard({ hold: "Postgres or SQLite?" });
+    const board = boardSender();
+    store.set(answerKey(held), "Postgres");
+
+    expect(submitAnswer(held, board.toMate, store)).toBe(true);
+    expect(board.tab()).toBe("chat");
+    // Still on its way: the line keeps its words, and the box and Send are disabled.
+    expect(store.get(answerKey(held))).toBe("Postgres");
+    expect(board.toMate.sending).toBe(true);
+    expect(submitAnswer(held, board.toMate, store)).toBe(false);
+
+    board.settle(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    board.back();
+    expect(isHeld(held)).toBe(true);
+    expect(store.get(answerKey(held))).toBe("");
+    expect(board.toMate.sending).toBe(false);
+    expect(submitAnswer(held, board.toMate, store)).toBe(false);
+    expect(board.sent).toEqual(["pick-db — Choose the database: Postgres"]);
+  });
+
+  it("leaves a failed answer in the box to send again", async () => {
+    const store = createDraftStore({});
+    const held = backlogCard({ hold: "Postgres or SQLite?" });
+    const board = boardSender();
+    store.set(answerKey(held), "SQLite");
+    expect(submitAnswer(held, board.toMate, store)).toBe(true);
+    board.settle(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(store.get(answerKey(held))).toBe("SQLite");
+    expect(board.toMate.sending).toBe(false);
+    expect(submitAnswer(held, board.toMate, store)).toBe(true);
+    expect(board.sent).toHaveLength(2);
+  });
+
+  it("keeps each card's answer apart from the others and from the chat's draft", () => {
+    const held = backlogCard({ hold: "which?" });
+    expect(answerKey(held)).toBe("answer:backlog:pick-db");
+    expect(answerKey(held)).not.toBe(answerKey(backlogCard({ id: "other" })));
   });
 });
